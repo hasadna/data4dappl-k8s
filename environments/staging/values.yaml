@@ -1,0 +1,19 @@
+global:
+  enableRootChart: true
+  googleProjectId: hasadna-odata
+  backupsBucketName: odata-k8s-backups
+  environmentName: staging
+
+adminer:
+  enabled: true
+
+traefik:
+  enabled: true
+  # loadBalancerIP: 1.2.3.4
+  acmeEmail: ori@uumpa.com
+  rootDomain: staging.odata.org.il
+  enableNginx: true
+
+nginx:
+  enabled: true
+  enableHtpasswdAuth: true

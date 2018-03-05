@@ -1,0 +1,37 @@
+language: bash
+sudo: required
+env:
+  matrix:
+  - DEPLOY_ENVIRONMENT=staging DEPLOY_BRANCH=master
+#  - DEPLOY_ENVIRONMENT=production DEPLOY_TAGS=true
+services:
+- docker
+script:
+- |
+  if [ "${DEPLOY_ENVIRONMENT}" != "" ] && [ "${TRAVIS_PULL_REQUEST}" == "false" ] &&\
+     ( \
+      ([ "${TRAVIS_BRANCH}" == "${DEPLOY_BRANCH}" ] && ! echo "${TRAVIS_COMMIT_MESSAGE}" | grep -- --no-deploy) ||\
+      ([ "${DEPLOY_TAGS}" == "true" ] && [ "${TRAVIS_TAG}" != "" ]) \
+     )
+  then
+      openssl aes-256-cbc -K $encrypted_f32f35ec6644_key -iv $encrypted_f32f35ec6644_iv -in ./k8s-ops-secret.json.enc -out ./secret-k8s-ops.json -d
+      K8S_ENVIRONMENT_NAME="${DEPLOY_ENVIRONMENT}"
+      OPS_REPO_SLUG="Beit-Hatfutsot/mojp-k8s"
+      OPS_REPO_BRANCH="${DEPLOY_BRANCH}"
+      wget https://raw.githubusercontent.com/OriHoch/sk8s-ops/master/run_docker_ops.sh
+      chmod +x run_docker_ops.sh
+      if ./run_docker_ops.sh "${K8S_ENVIRONMENT_NAME}" "
+         RES=0;
+         ! ./helm_upgrade.sh && echo 'failed helm upgrade' && RES=1;
+         ! ./helm_upgrade_external_chart.sh mojp-dbs-elasticsearch && echo 'failed mojp-dbs-elasticsearch upgrade' && RES=1;
+         ! ./helm_upgrade_external_chart.sh mojp-dbs-pipelines --force && echo 'failed mojp-dbs-pipelines upgrade' && RES=1;
+         ! ./helm_upgrade_external_chart.sh mojp-dbs-searchapi && echo 'failed mojp-dbs-searchapi upgrade' && RES=1;
+         ! ./helm_upgrade_external_chart.sh mojp-dbs-searchapp && echo 'failed mojp-dbs-searchapp upgrade' && RES=1;
+         exit "'$'"RES
+      " "orihoch/sk8s-ops" "${OPS_REPO_SLUG}" "${OPS_REPO_BRANCH}"; then
+        true
+      else
+        echo "failed to run docker ops"
+        false
+      fi
+  fi
