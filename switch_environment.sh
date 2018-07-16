@@ -25,7 +25,7 @@ if which dotenv >/dev/null && which helm >/dev/null && which kubectl >/dev/null 
   		if ! ln -s "`pwd`/environments/${ENVIRONMENT_NAME}/.env" ".env"; then
   			echo "Failed to symlink .env file"
   		else
-  			source connect.sh
+  			source bin/k8s_connect.sh
   		fi
   	fi
   fi
